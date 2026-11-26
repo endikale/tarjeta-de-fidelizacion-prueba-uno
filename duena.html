@@ -1,0 +1,656 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f59e0b">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Fidelidad">
+  <title>Fidelidad Dueña</title>
+  <link rel="manifest" href="manifest-duena.json">
+  <link rel="stylesheet" href="css/estilos.css">
+</head>
+<body class="tema-duena">
+  <div class="app">
+    <header class="topbar">
+      <div class="brand"><span class="brand__icon">🔒</span> Fidelidad Dueña</div>
+      <button class="topbar__accion oculto" id="btn-bloquear">Bloquear</button>
+    </header>
+
+    <main>
+      <!-- Primera configuración -->
+      <section id="pantalla-config" class="oculto">
+        <div class="card">
+          <h1>Configura tu negocio</h1>
+          <p class="pequeno muted">Esto solo se guarda en este móvil. Con esto se genera el QR del sello; después imprime los tres cartelitos. Tardas un minuto.</p>
+          <div class="campo">
+            <label class="label" for="cfg-negocio">Nombre del negocio</label>
+            <input class="input" id="cfg-negocio" type="text" maxlength="60" placeholder="Ej. Panadería Demo">
+          </div>
+          <div class="campo">
+            <label class="label" for="cfg-premio">Premio</label>
+            <input class="input" id="cfg-premio" type="text" maxlength="80" placeholder="Ej. Barra gratis">
+          </div>
+          <div class="campo">
+            <label class="label" for="cfg-sellos">Sellos para ganar el premio</label>
+            <input class="input" id="cfg-sellos" type="number" min="1" max="100" value="10" inputmode="numeric">
+          </div>
+          <div class="campo">
+            <label class="label" for="cfg-frecuencia">¿Cada cuánto se da el sello?</label>
+            <select class="input" id="cfg-frecuencia">
+              <option value="diario">Cada día · sello diario</option>
+              <option value="semanal">Una vez por semana</option>
+            </select>
+          </div>
+          <div class="campo">
+            <label class="label" for="cfg-pin">PIN (opcional)</label>
+            <input class="input" id="cfg-pin" type="password" inputmode="numeric" maxlength="8" placeholder="Déjalo vacío: entrará directa">
+            <div class="ayuda">Solo sirve si el móvil está al público y quieres evitar que lo toquen. Con los 3 QRs fijos la dueña no lo necesita.</div>
+          </div>
+          <div class="campo">
+            <label class="label" for="cfg-pin2">Repite el PIN (si lo pusiste)</label>
+            <input class="input" id="cfg-pin2" type="password" inputmode="numeric" maxlength="8">
+          </div>
+          <p class="error" id="config-error"></p>
+          <button class="btn btn--primario btn--ancho" id="btn-guardar-config">Guardar y empezar</button>
+        </div>
+      </section>
+
+      <!-- PIN -->
+      <section id="pantalla-pin" class="oculto">
+        <div class="card" style="text-align:center; padding:28px 20px;">
+          <div style="font-size:2.5rem;">🔐</div>
+          <h1 id="pin-negocio" style="margin-top:10px;">Tu negocio</h1>
+          <p class="pequeno muted">Entra con tu PIN para abrir el panel.</p>
+          <div class="campo" style="text-align:left; margin-top:18px;">
+            <label class="label" for="input-pin">PIN</label>
+            <input class="input" id="input-pin" type="password" inputmode="numeric" maxlength="8" placeholder="••••" enterkeyhint="done">
+          </div>
+          <p class="error" id="pin-error"></p>
+          <button class="btn btn--primario btn--ancho" id="btn-entrar">Entrar</button>
+        </div>
+      </section>
+
+      <!-- Panel -->
+      <section id="pantalla-principal" class="oculto">
+        <div class="card">
+          <h1 id="negocio-titulo">Mi negocio</h1>
+          <p class="pequeno muted" id="premio-titulo"></p>
+          <p class="pequeno muted" id="frecuencia-titulo" style="margin-bottom:0;"></p>
+        </div>
+
+        <div class="card card--suave" style="margin-top:16px;">
+          <h3>📭 Aquí no hay datos de clientes</h3>
+          <p class="pequeno muted" style="margin-bottom:0;">Con los 3 QRs fijos, cada sello se guarda en el móvil del cliente. Nadie te envía nada a este móvil: por eso no hay contadores ni listas. Aquí solo vive tu configuración; lo importante son los tres cartelitos.</p>
+        </div>
+
+        <div id="backup-aviso"></div>
+
+        <div class="acciones">
+          <button class="btn btn--primario btn--ancho" id="btn-mostrador">🖨️ Los 3 QRs del local</button>
+          <button class="btn btn--fantasma" id="btn-backup">💾 Copia de seguridad</button>
+          <button class="btn btn--fantasma" id="btn-config">⚙️ Configuración</button>
+        </div>
+
+        <div class="card card--suave" style="margin-top:16px;">
+          <h3>Los 3 cartelitos</h3>
+          <p class="pequeno muted" style="margin-bottom:0;">1️⃣ <strong>QR de instalar</strong> → el cliente descarga su app una vez. 2️⃣ <strong>QR del sello</strong> → el cliente lo escanea y su móvil le pone el sello del día o de la semana. 3️⃣ <strong>QR de reclamar premio</strong> → cuando complete la tarjeta, lo escanea y su móvil anota que ya lo ha recogido. Son los tres únicos QRs del local y tú no haces nada en cada visita. Todo es <strong>de confianza</strong>: no llega a tu app.</p>
+        </div>
+
+        <details class="detalle" style="margin-top:16px;">
+          <summary>🔎 Modo verificado (opcional, solo si algún día quieres llevar control)</summary>
+          <div class="acciones" style="margin-top:12px;">
+            <button class="btn btn--oscuro btn--ancho" id="btn-escanear">📷 Escanear QR del cliente</button>
+            <button class="btn btn--fantasma" id="btn-clientes">👥 Clientes y tokens</button>
+            <button class="btn btn--fantasma" id="btn-registro">📜 Registro de sellos</button>
+          </div>
+          <p class="pequeno muted" style="margin:10px 0 0;">Esto no hace falta en el mostrador. Solo se usa si decides sellar tú: el cliente muestra su QR desde su app y tú lo escaneas. Ahí sí se guarda un registro en este móvil.</p>
+        </details>
+      </section>
+    </main>
+  </div>
+
+  <!-- Escanear / respuesta -->
+  <div class="modal oculto" id="modal-escanear">
+    <div class="modal__panel">
+      <div class="modal__cabecera"><h2>Sellar cliente</h2><button class="btn btn--fantasma btn--icono" data-cerrar="modal-escanear">✕</button></div>
+
+      <div id="zona-escaner">
+        <p class="pequeno muted" id="estado-duena">Apunta al QR que te muestra el cliente…</p>
+        <div class="scanner" id="lector-duena"></div>
+        <details class="detalle">
+          <summary>¿Sin cámara? Pega el QR aquí</summary>
+          <div class="campo" style="margin-top:12px;">
+            <textarea class="input" id="pegar-identidad" placeholder='Pega aquí: {"t":"id","v":1,"token":"...","nombre":"Juan"}'></textarea>
+            <button class="btn btn--secundario btn--ancho btn--chico" id="btn-aplicar-identidad">Sellar</button>
+          </div>
+        </details>
+      </div>
+
+      <div id="resultado" class="oculto">
+        <div id="resultado-banner" class="banner"></div>
+        <h2 id="resultado-titulo"></h2>
+        <p class="pequeno muted" id="resultado-detalle"></p>
+        <div id="bloque-qr-respuesta">
+          <p class="pequeno centro">Que el cliente escanee este QR 👇</p>
+          <div class="qr-caja"><div id="qr-respuesta"></div></div>
+          <div class="campo">
+            <label class="label">Enlace con los datos (por si lo pega)</label>
+            <textarea class="input" id="url-respuesta" readonly rows="3"></textarea>
+          </div>
+        </div>
+        <div class="acciones">
+          <button class="btn btn--primario btn--ancho" id="btn-otro">Escanear otro cliente</button>
+          <button class="btn btn--fantasma" id="btn-copiar-respuesta">Copiar enlace</button>
+          <button class="btn btn--fantasma" id="btn-cerrar-resultado">Cerrar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Clientes -->
+  <div class="modal oculto" id="modal-clientes">
+    <div class="modal__panel">
+      <div class="modal__cabecera"><h2>Clientes (modo verificado)</h2><button class="btn btn--fantasma btn--icono" data-cerrar="modal-clientes">✕</button></div>
+      <p class="pequeno muted">Solo aparecen aquí los clientes que has sellado tú con el escáner. Con los 3 QRs fijos esta lista está vacía: los sellos viven en el móvil de cada cliente.</p>
+      <input class="input" id="buscar-cliente" type="search" placeholder="Buscar por nombre…">
+      <ul class="lista" id="lista-clientes" style="margin-top:12px;"></ul>
+    </div>
+  </div>
+
+  <!-- Registro -->
+  <div class="modal oculto" id="modal-registro">
+    <div class="modal__panel">
+      <div class="modal__cabecera"><h2>Registro de sellos (modo verificado)</h2><button class="btn btn--fantasma btn--icono" data-cerrar="modal-registro">✕</button></div>
+      <p class="pequeno muted">Solo registra los sellos que has dado tú con el escáner. El QR fijo del mostrador no envía ningún dato a este móvil.</p>
+      <ul class="lista" id="lista-sellos"></ul>
+    </div>
+  </div>
+
+  <!-- Backup -->
+  <div class="modal oculto" id="modal-backup">
+    <div class="modal__panel">
+      <div class="modal__cabecera"><h2>Copia de seguridad</h2><button class="btn btn--fantasma btn--icono" data-cerrar="modal-backup">✕</button></div>
+      <p class="pequeno muted" id="backup-info"></p>
+      <div class="acciones">
+        <button class="btn btn--primario btn--ancho" id="btn-exportar-duena">💾 Exportar ahora (.json)</button>
+        <button class="btn btn--fantasma btn--ancho" id="btn-importar-duena">📥 Importar una copia</button>
+      </div>
+      <input type="file" id="archivo-duena" accept="application/json,.json" class="oculto">
+      <div class="detalle">
+        <summary>¿Por qué es tan importante?</summary>
+        <p class="pequeno muted" style="margin:10px 0 0;">Este móvil guarda tu configuración y, si usas el modo verificado, también clientes y sellos. Exporta el JSON y guárdalo en Drive o envíatelo por email. Si pierdes el móvil, importas ese archivo en uno nuevo y sigues donde estabas. Cada cliente guarda su propia tarjeta en su móvil.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Configuración -->
+  <div class="modal oculto" id="modal-config">
+    <div class="modal__panel">
+      <div class="modal__cabecera"><h2>Configuración</h2><button class="btn btn--fantasma btn--icono" data-cerrar="modal-config">✕</button></div>
+      <div class="campo"><label class="label" for="cfg2-negocio">Nombre del negocio</label><input class="input" id="cfg2-negocio" maxlength="60"></div>
+      <div class="campo"><label class="label" for="cfg2-premio">Premio</label><input class="input" id="cfg2-premio" maxlength="80"></div>
+      <div class="campo"><label class="label" for="cfg2-sellos">Sellos para premio</label><input class="input" id="cfg2-sellos" type="number" min="1" max="100" inputmode="numeric"></div>
+      <div class="campo"><label class="label" for="cfg2-frecuencia">Cada cuánto se da el sello</label>
+        <select class="input" id="cfg2-frecuencia">
+          <option value="diario">Cada día · sello diario</option>
+          <option value="semanal">Una vez por semana</option>
+        </select>
+      </div>
+      <div class="campo"><label class="label" for="cfg2-pin">Nuevo PIN (vacío = mantener)</label><input class="input" id="cfg2-pin" type="password" inputmode="numeric" maxlength="8"></div>
+      <div class="campo"><label style="display:flex; gap:10px; align-items:center;"><input type="checkbox" id="cfg2-quitar-pin"> Quitar el PIN</label></div>
+      <p class="error" id="config2-error"></p>
+      <button class="btn btn--primario btn--ancho" id="btn-guardar-cambios">Guardar cambios</button>
+      <button class="btn btn--peligro btn--ancho" id="btn-borrar-todo" style="margin-top:12px;">🗑️ Borrar todos los datos</button>
+    </div>
+  </div>
+
+  <!-- Los 3 QRs fijos -->
+  <div class="modal oculto" id="modal-mostrador">
+    <div class="modal__panel">
+      <div class="modal__cabecera"><h2>Los 3 QRs del local</h2><button class="btn btn--fantasma btn--icono" data-cerrar="modal-mostrador">✕</button></div>
+      <p class="pequeno muted">Estos son los tres únicos QRs que hay en el local. Imprímelos y pégalos juntos en el mostrador: el 1 se escanea una vez, el 2 en cada visita y el 3 solo cuando el cliente complete la tarjeta. Si cambias premio, sellos o frecuencia, imprime el 2 y el 3 otra vez.</p>
+
+      <h3>1️⃣ Para instalar la app</h3>
+      <div class="qr-caja"><div id="qr-instalar"></div></div>
+      <p class="qr-texto centro" id="url-instalar"></p>
+
+      <h3 style="margin-top:20px;">2️⃣ Sello del local</h3>
+      <div class="qr-caja"><div id="qr-sello-diario"></div></div>
+      <p class="qr-texto centro" id="texto-sello"></p>
+      <button class="btn btn--fantasma btn--ancho btn--chico" id="btn-copiar-sello">Copiar datos del sello</button>
+
+      <h3 style="margin-top:20px;">3️⃣ Reclamar el premio</h3>
+      <div class="qr-caja"><div id="qr-premio"></div></div>
+      <p class="qr-texto centro" id="texto-premio"></p>
+      <button class="btn btn--fantasma btn--ancho btn--chico" id="btn-copiar-premio">Copiar datos del premio</button>
+
+      <div class="banner banner--error" style="margin-top:14px;">⚠️ Los QRs 2 y 3 funcionan por confianza: los valida el móvil del cliente, no tu app. No sabrás quién los escaneó ni podrás corregir su contador. El QR 3 solo deja reclamar si la tarjeta está completa; luego esa tarjeta vuelve a empezar. Para control real, usa el escáner de la dueña.</div>
+    </div>
+  </div>
+
+  <script src="js/vendor/idb.umd.js"></script>
+  <script src="js/vendor/qrcode.min.js"></script>
+  <script src="js/vendor/html5-qrcode.min.js"></script>
+  <script src="js/util.js"></script>
+  <script src="js/db-duena.js"></script>
+  <script src="js/qr-gen.js"></script>
+  <script src="js/qr-scan.js"></script>
+  <script src="js/backup.js"></script>
+  <script>
+    (function () {
+      'use strict';
+      const $ = (id) => document.getElementById(id);
+      let config = null;
+      let procesando = false;
+      let ultimaRespuesta = null;
+
+      function mostrar(pantalla) {
+        ['config', 'pin', 'principal'].forEach(function (nombre) {
+          $('pantalla-' + nombre).classList.toggle('oculto', nombre !== pantalla);
+        });
+        $('btn-bloquear').classList.toggle('oculto', pantalla !== 'principal' || !(config && config.pin));
+        window.scrollTo(0, 0);
+      }
+
+      function abrir(id) { $(id).classList.remove('oculto'); }
+      function cerrar(id) {
+        $(id).classList.add('oculto');
+        if (id === 'modal-escanear') QRScan.detener().catch(function () {});
+      }
+
+      function fechaHora(ts) {
+        return new Date(ts).toLocaleString('es-ES', {
+          day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
+        });
+      }
+
+      async function actualizar() {
+        await DBDuena.asegurarNegocioId();
+        config = await DBDuena.getConfig();
+        if (!config) return mostrar('config');
+        $('negocio-titulo').textContent = config.nombre_negocio;
+        $('pin-negocio').textContent = config.nombre_negocio;
+        $('btn-bloquear').classList.toggle('oculto', !config.pin);
+        $('premio-titulo').textContent = '🎁 ' + config.premio + ' · cada ' + config.sellos_para_premio + ' sellos';
+        $('frecuencia-titulo').textContent = config.frecuencia === 'semanal'
+          ? '🔁 Sello semanal: cada cliente lo escanea una vez por semana.'
+          : '🔁 Sello diario: cada cliente lo escanea una vez al día.';
+
+        const aviso = $('backup-aviso');
+        if (!config.last_backup_at) {
+          aviso.innerHTML = '<div class="banner">💾 Haz ya tu primera copia de seguridad. Sin ella, si pierdes el móvil pierdes todo.</div>';
+        } else {
+          const dias = Math.floor((Date.now() - config.last_backup_at) / 86400000);
+          aviso.innerHTML = dias >= 7
+            ? '<div class="banner">⏰ Hace ' + dias + ' días que no haces backup. Exporta el JSON y guárdalo en Drive.</div>'
+            : '';
+        }
+      }
+
+      function mostrarResultado(opciones) {
+        $('zona-escaner').classList.add('oculto');
+        $('resultado').classList.remove('oculto');
+        $('resultado-banner').className = 'banner' + (opciones.premio ? ' banner--premio' : opciones.ok ? ' banner--ok' : ' banner--error');
+        $('resultado-banner').textContent = opciones.banner || '';
+        $('resultado-titulo').textContent = opciones.titulo || '';
+        $('resultado-detalle').textContent = opciones.detalle || '';
+        $('bloque-qr-respuesta').classList.toggle('oculto', !opciones.datos);
+        ultimaRespuesta = opciones.datos || null;
+        if (opciones.datos) {
+          const url = QRGen.urlRespuesta(opciones.datos);
+          QRGen.dibujar($('qr-respuesta'), url, 240);
+          $('url-respuesta').value = url;
+        }
+      }
+
+      function datosRespuesta(cliente) {
+        return {
+          t: 'sello',
+          v: 1,
+          token: cliente.token,
+          nombre: cliente.nombre,
+          negocio: config.nombre_negocio,
+          premio: config.premio,
+          sellos_para_premio: config.sellos_para_premio,
+          frecuencia: config.frecuencia === 'semanal' ? 'semanal' : 'diario',
+          racha_actual: Number(cliente.racha_actual) || 0,
+          racha_maxima: Number(cliente.racha_maxima) || 0,
+          sellos_totales: Number(cliente.sellos_totales) || 0,
+          sellos_ciclo: Number(cliente.sellos_ciclo) || 0,
+          premios_reclamados: Number(cliente.premios_reclamados) || 0,
+          ultimo_premio: cliente.ultimo_premio || null,
+          ultimo_sello: cliente.ultimo_sello
+        };
+      }
+
+      async function sellar(identidad) {
+        const resultado = await DBDuena.validarSello(identidad.token, identidad.nombre);
+        if (!resultado.ok) {
+          mostrarResultado({
+            ok: false,
+            titulo: '⛔ No se ha sellado',
+            banner: 'NO SE HA SELLADO',
+            detalle: resultado.error
+          });
+        } else {
+          const cliente = resultado.cliente;
+          const datos = datosRespuesta(cliente);
+          mostrarResultado({
+            ok: true,
+            premio: resultado.premio,
+            banner: resultado.premio ? '🎁 ENTREGAR PREMIO: ' + resultado.premio_texto : '✅ SELLADO',
+            titulo: '✅ ' + cliente.nombre + ' sellado — Racha ' + cliente.racha_actual,
+            detalle: 'Sellos totales: ' + cliente.sellos_totales + ' · Último sello: ' + cliente.ultimo_sello +
+              '. Muestra el QR de abajo para que el cliente lo escanee.',
+            datos: datos
+          });
+        }
+        await actualizar();
+      }
+
+      async function procesarIdentidad(texto) {
+        if (procesando) return;
+        procesando = true;
+        try {
+          await sellar(QRScan.parsearIdentidad(texto));
+        } catch (error) {
+          mostrarResultado({ ok: false, titulo: '⛔ QR no válido', banner: 'NO SE HA SELLADO', detalle: error.message });
+        } finally {
+          procesando = false;
+        }
+      }
+
+      async function iniciarEscaneo() {
+        $('zona-escaner').classList.remove('oculto');
+        $('resultado').classList.add('oculto');
+        $('estado-duena').textContent = 'Apunta al QR que te muestra el cliente…';
+        procesando = false;
+        abrir('modal-escanear');
+        try {
+          await QRScan.iniciar({
+            elementId: 'lector-duena',
+            onResultado: function (texto) {
+              if (procesando) return;
+              procesando = true;
+              QRScan.detener().then(function () { procesarIdentidad(texto); });
+            }
+          });
+        } catch (error) {
+          $('estado-duena').textContent = error.message;
+        }
+      }
+
+      async function renderClientes(filtro) {
+        const clientes = await DBDuena.listarClientes();
+        const texto = String(filtro || '').trim().toLowerCase();
+        const lista = $('lista-clientes');
+        lista.innerHTML = '';
+        const visibles = clientes.filter(function (c) { return String(c.nombre).toLowerCase().includes(texto); });
+        if (!visibles.length) {
+          lista.innerHTML = '<li class="fila"><span class="fila__secundario">No hay clientes todavía.</span></li>';
+          return;
+        }
+        visibles.forEach(function (cliente) {
+          const li = document.createElement('li');
+          li.className = 'fila';
+          const info = document.createElement('div');
+          info.innerHTML = '<div class="fila__principal">' + Util.escapar(cliente.nombre) + '</div>' +
+            '<div class="fila__secundario">🔥 ' + Number(cliente.racha_actual || 0) + ' · ' +
+            Number(cliente.sellos_totales || 0) + ' sellos · ' + Util.escapar(String(cliente.token).slice(0, 8)) + '…</div>';
+          const botones = document.createElement('div');
+          botones.className = 'fila__derecha';
+          botones.innerHTML = '<button class="btn btn--fantasma btn--icono btn--chico" data-accion="reenviar">🔁 Enviar estado</button> ' +
+            '<button class="btn btn--fantasma btn--icono btn--chico" data-accion="token">🔑 Token nuevo</button>';
+          botones.querySelector('[data-accion="reenviar"]').addEventListener('click', function () {
+            cerrar('modal-clientes');
+            mostrarResultado({
+              ok: true,
+              titulo: '🔁 Estado enviado a ' + cliente.nombre,
+              detalle: 'Este QR no añade sellos: solo reenvía el estado actual. Útil si el cliente perdió el móvil.',
+              datos: datosRespuesta(cliente)
+            });
+            abrir('modal-escanear');
+          });
+          botones.querySelector('[data-accion="token"]').addEventListener('click', async function () {
+            if (!window.confirm('¿Asignar un token nuevo a ' + cliente.nombre + '? El QR antiguo dejará de valer.')) return;
+            try {
+              const nuevo = await DBDuena.cambiarToken(cliente.token, Util.randomToken());
+              window.alert('Token nuevo para ' + nuevo.nombre + ':\n\n' + nuevo.token + '\n\nPídele que lo pegue en Ajustes → Cambiar mi token.');
+              await actualizar();
+              await renderClientes(filtro);
+            } catch (error) { Util.toast(error.message, 'error'); }
+          });
+          li.appendChild(info);
+          li.appendChild(botones);
+          lista.appendChild(li);
+        });
+      }
+
+      async function renderSellos() {
+        const sellos = await DBDuena.listarSellos(80);
+        const lista = $('lista-sellos');
+        lista.innerHTML = '';
+        if (!sellos.length) {
+          lista.innerHTML = '<li class="fila"><span class="fila__secundario">Todavía no hay sellos.</span></li>';
+          return;
+        }
+        sellos.forEach(function (sello) {
+          const li = document.createElement('li');
+          li.className = 'fila';
+          li.innerHTML = '<div><div class="fila__principal">' + Util.escapar(sello.nombre || 'Cliente') + '</div>' +
+            '<div class="fila__secundario">' + Util.escapar(String(sello.token).slice(0, 10)) + '…</div></div>' +
+            '<div class="fila__derecha"><div class="fila__principal">✅</div>' +
+            '<div class="fila__secundario">' + Util.escapar(fechaHora(sello.ts)) + '</div></div>';
+          lista.appendChild(li);
+        });
+      }
+
+      async function entrar() {
+        sessionStorage.setItem('fidelidad_duena_ok', '1');
+        await actualizar();
+        if (config) mostrar('principal');
+      }
+
+      async function inicializar() {
+        document.querySelectorAll('[data-cerrar]').forEach(function (boton) {
+          boton.addEventListener('click', function () { cerrar(boton.dataset.cerrar); });
+        });
+        document.querySelectorAll('.modal').forEach(function (modal) {
+          modal.addEventListener('click', function (event) {
+            if (event.target === modal) cerrar(modal.id);
+          });
+        });
+
+        $('btn-guardar-config').addEventListener('click', async function () {
+          const pin = $('cfg-pin').value.trim();
+          const pin2 = $('cfg-pin2').value.trim();
+          $('config-error').textContent = '';
+          if ($('cfg-negocio').value.trim().length < 2) return $('config-error').textContent = 'Pon el nombre del negocio.';
+          if (pin && !/^\d{4,8}$/.test(pin)) return $('config-error').textContent = 'Si pones PIN, deben ser entre 4 y 8 números.';
+          if (pin !== pin2) return $('config-error').textContent = 'Los PIN no coinciden.';
+          try {
+            await DBDuena.guardarConfig({
+              nombre_negocio: $('cfg-negocio').value,
+              premio: $('cfg-premio').value || 'Premio',
+              sellos_para_premio: $('cfg-sellos').value,
+              frecuencia: $('cfg-frecuencia').value,
+              pin: pin
+            });
+            await entrar();
+            Util.toast('Configuración guardada. Ya puedes imprimir los 3 QRs del local.');
+          } catch (error) { $('config-error').textContent = error.message; }
+        });
+
+        $('btn-entrar').addEventListener('click', async function () {
+          const actual = await DBDuena.getConfig();
+          if (!actual) return mostrar('config');
+          if ($('input-pin').value.trim() === actual.pin) {
+            $('input-pin').value = '';
+            $('pin-error').textContent = '';
+            await entrar();
+          } else {
+            $('pin-error').textContent = 'PIN incorrecto. Inténtalo otra vez.';
+            $('input-pin').value = '';
+          }
+        });
+        $('input-pin').addEventListener('keydown', function (event) {
+          if (event.key === 'Enter') $('btn-entrar').click();
+        });
+
+        $('btn-bloquear').addEventListener('click', function () {
+          sessionStorage.removeItem('fidelidad_duena_ok');
+          $('input-pin').value = '';
+          mostrar('pin');
+        });
+
+        $('btn-escanear').addEventListener('click', iniciarEscaneo);
+
+        $('btn-aplicar-identidad').addEventListener('click', async function () {
+          const texto = $('pegar-identidad').value;
+          $('pegar-identidad').value = '';
+          await procesarIdentidad(texto);
+        });
+
+        $('btn-otro').addEventListener('click', iniciarEscaneo);
+        $('btn-cerrar-resultado').addEventListener('click', function () { cerrar('modal-escanear'); });
+        $('btn-copiar-respuesta').addEventListener('click', function () {
+          if (!ultimaRespuesta) return;
+          Util.copiar(QRGen.urlRespuesta(ultimaRespuesta)).then(function () { Util.toast('Enlace copiado.'); });
+        });
+
+        $('btn-clientes').addEventListener('click', async function () {
+          abrir('modal-clientes');
+          $('buscar-cliente').value = '';
+          await renderClientes('');
+        });
+        $('buscar-cliente').addEventListener('input', function (event) {
+          renderClientes(event.target.value).catch(function (e) { Util.toast(e.message, 'error'); });
+        });
+
+        $('btn-registro').addEventListener('click', async function () {
+          abrir('modal-registro');
+          await renderSellos();
+        });
+
+        $('btn-mostrador').addEventListener('click', async function () {
+          try {
+            await actualizar();
+            if (!config) return;
+            const url = QRGen.urlInstalar();
+            QRGen.dibujar($('qr-instalar'), url, 220);
+            $('url-instalar').textContent = url;
+            const codigo = QRGen.codigoSelloDiario(config);
+            QRGen.dibujar($('qr-sello-diario'), codigo, 240);
+            $('texto-sello').textContent = config.frecuencia === 'semanal'
+              ? 'Sello semanal · ' + config.nombre_negocio
+              : 'Sello diario · ' + config.nombre_negocio;
+            QRGen.dibujar($('qr-premio'), QRGen.codigoReclamarPremio(config), 240);
+            $('texto-premio').textContent = 'Reclamar ' + config.premio + ' · ' + config.nombre_negocio;
+            abrir('modal-mostrador');
+          } catch (error) { Util.toast(error.message, 'error'); }
+        });
+
+        $('btn-copiar-sello').addEventListener('click', function () {
+          if (!config) return;
+          Util.copiar(QRGen.codigoSelloDiario(config)).then(function () { Util.toast('Datos del sello copiados.'); });
+        });
+
+        $('btn-copiar-premio').addEventListener('click', function () {
+          if (!config) return;
+          Util.copiar(QRGen.codigoReclamarPremio(config)).then(function () { Util.toast('Datos del premio copiados.'); });
+        });
+
+        $('btn-backup').addEventListener('click', async function () {
+          abrir('modal-backup');
+          const actual = await DBDuena.getConfig();
+          $('backup-info').textContent = actual && actual.last_backup_at
+            ? 'Última copia: ' + fechaHora(actual.last_backup_at) + '. Frecuencia recomendada: 1 vez por semana.'
+            : 'Todavía no has exportado ninguna copia.';
+        });
+
+        $('btn-exportar-duena').addEventListener('click', async function () {
+          try {
+            await Backup.exportarDuena();
+            await actualizar();
+            Util.toast('Copia descargada. Guárdala en Drive o envíatela por email.');
+          } catch (error) { Util.toast(error.message, 'error'); }
+        });
+
+        $('btn-importar-duena').addEventListener('click', function () { $('archivo-duena').click(); });
+        $('archivo-duena').addEventListener('change', async function (event) {
+          try {
+            if (!window.confirm('¿Reemplazar TODOS los datos del negocio con la copia? Se borrarán los actuales.')) return;
+            await Backup.importarDuena(event.target.files[0]);
+            await actualizar();
+            Util.toast('Copia restaurada correctamente.');
+          } catch (error) { Util.toast(error.message, 'error'); }
+          event.target.value = '';
+        });
+
+        $('btn-config').addEventListener('click', async function () {
+          const actual = await DBDuena.getConfig();
+          if (!actual) return;
+          $('cfg2-negocio').value = actual.nombre_negocio;
+          $('cfg2-premio').value = actual.premio;
+          $('cfg2-sellos').value = actual.sellos_para_premio;
+          $('cfg2-frecuencia').value = actual.frecuencia === 'semanal' ? 'semanal' : 'diario';
+          $('cfg2-pin').value = '';
+          $('cfg2-quitar-pin').checked = false;
+          $('config2-error').textContent = '';
+          abrir('modal-config');
+        });
+
+        $('btn-guardar-cambios').addEventListener('click', async function () {
+          const pin = $('cfg2-pin').value.trim();
+          const actual = await DBDuena.getConfig();
+          $('config2-error').textContent = '';
+          if (pin && !/^\d{4,8}$/.test(pin)) return $('config2-error').textContent = 'El PIN debe tener entre 4 y 8 números.';
+          try {
+            await DBDuena.guardarConfig({
+              nombre_negocio: $('cfg2-negocio').value,
+              premio: $('cfg2-premio').value,
+              sellos_para_premio: $('cfg2-sellos').value,
+              frecuencia: $('cfg2-frecuencia').value,
+              pin: $('cfg2-quitar-pin').checked ? '' : (pin || actual.pin)
+            });
+            cerrar('modal-config');
+            await actualizar();
+            Util.toast('Cambios guardados. Si cambiaste premio o frecuencia, imprime el QR del sello otra vez.');
+          } catch (error) { $('config2-error').textContent = error.message; }
+        });
+
+        $('btn-borrar-todo').addEventListener('click', async function () {
+          if (!window.confirm('¿Borrar TODOS los clientes, sellos y la configuración?')) return;
+          if (!window.confirm('Última oportunidad: ¿tienes una copia de seguridad actualizada?')) return;
+          await DBDuena.borrarTodo();
+          sessionStorage.removeItem('fidelidad_duena_ok');
+          window.location.reload();
+        });
+
+        try {
+          await DBDuena.migrarLegacy();
+          config = await DBDuena.getConfig();
+          if (!config) {
+            mostrar('config');
+          } else if (!config.pin || sessionStorage.getItem('fidelidad_duena_ok') === '1') {
+            await entrar();
+          } else {
+            $('pin-negocio').textContent = config.nombre_negocio;
+            mostrar('pin');
+          }
+        } catch (error) {
+          Util.toast(error.message, 'error');
+        }
+      }
+
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js').catch(function () {});
+      }
+      document.addEventListener('DOMContentLoaded', inicializar);
+    })();
+  </script>
+</body>
+</html>

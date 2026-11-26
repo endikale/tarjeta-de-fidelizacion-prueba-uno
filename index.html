@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f59e0b">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="description" content="Tarjeta de fidelidad 100% local. Sin servidor, sin cuentas, sin internet.">
+  <title>Fidelidad local · Tu tarjeta en tu móvil</title>
+  <link rel="manifest" href="manifest-cliente.json">
+  <link rel="stylesheet" href="css/estilos.css">
+</head>
+<body class="tema-cliente">
+  <div class="app">
+    <header class="topbar">
+      <div class="brand"><span class="brand__icon">🥐</span> Fidelidad local</div>
+    </header>
+
+    <main>
+      <section class="card" style="text-align:center; padding:28px 20px;">
+        <div style="font-size:3rem; line-height:1;">🥐</div>
+        <h1 style="margin-top:12px;">Tu tarjeta, en tu móvil</h1>
+        <p class="muted">Escanea el QR que hay en el mostrador del local para abrir tu tarjeta. La primera vez hace falta internet; después funciona hasta en modo avión.</p>
+        <div class="acciones" style="margin-top:20px;">
+          <a class="btn btn--primario btn--ancho" href="cliente.html">📲 Abrir mi tarjeta</a>
+          <a class="btn btn--secundario btn--ancho" href="mostrador.html">🖨️ Los 3 QRs del mostrador</a>
+          <a class="btn btn--fantasma btn--ancho" href="duena.html">Soy la dueña · entrar</a>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Cómo funciona</h2>
+        <p class="pequeno"><strong>1.</strong> Escaneas el QR del local e instalas la app en pantalla de inicio.</p>
+        <p class="pequeno"><strong>2.</strong> Escribes tu nombre, apellidos y cumpleaños. Tu tarjeta se guarda solo en tu móvil.</p>
+        <p class="pequeno"><strong>3.</strong> En cada visita: escaneas el QR del sello del mostrador y ya está. La dueña no hace nada.</p>
+        <p class="pequeno">Solo hay tres QRs en el local: 1️⃣ instalar la app, 2️⃣ poner el sello en cada visita y 3️⃣ reclamar el premio cuando completes la tarjeta. Tu tarjeta, tus sellos y tu premio se guardan en tu móvil; la app de la dueña no recibe ningún dato y por eso no muestra contadores.</p>
+        <p class="pequeno muted" style="margin-bottom:0;">Nadie guarda tus datos en la nube. No hay cuentas ni contraseñas. Los avisos (sello diario, cumpleaños y Navidad) salen solo en tu móvil.</p>
+      </section>
+
+      <div class="banner">🔒 100 % offline · 0 € · Tus datos no salen del móvil.</div>
+    </main>
+  </div>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('sw.js').catch(function () {});
+      });
+    }
+  </script>
+</body>
+</html>

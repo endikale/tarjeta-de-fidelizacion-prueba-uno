@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f59e0b">
+  <meta name="description" content="Los 3 QRs fijos de la tienda ficticia Panadería Demo: instalar, sello y reclamar premio.">
+  <title>Panadería Demo · Los 3 QRs del mostrador</title>
+  <link rel="manifest" href="manifest-cliente.json">
+  <link rel="stylesheet" href="css/estilos.css">
+</head>
+<body class="tema-cliente">
+  <div class="app app--ancho">
+    <header class="topbar no-imprimir">
+      <div class="brand"><span class="brand__icon">🥐</span> Panadería Demo</div>
+      <a class="topbar__accion" href="cliente.html">Mi tarjeta</a>
+    </header>
+
+    <main>
+      <section class="card" style="text-align:center; padding:26px 20px;">
+        <div style="font-size:3rem; line-height:1;">🥐</div>
+        <h1 style="margin-top:10px;">Los 3 QRs del mostrador</h1>
+        <p class="muted">Tienda ficticia de ejemplo. Imprime esta hoja, pégala en el mostrador y la dueña no tiene que hacer nada en cada visita.</p>
+        <div class="acciones no-imprimir" style="margin-top:18px;">
+          <button class="btn btn--primario btn--ancho" id="btn-imprimir">🖨️ Imprimir el cartel</button>
+          <a class="btn btn--fantasma btn--ancho" href="cliente.html">📲 Abrir la tarjeta del cliente</a>
+          <a class="btn btn--fantasma btn--ancho" href="duena.html">⚙️ Panel de la dueña (opcional)</a>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Cartel para el local</h2>
+        <p class="pequeno muted">El QR 1 se escanea una sola vez. El QR 2, en cada visita. El QR 3, solo cuando la tarjeta esté completa. Los tres funcionan sin internet y sin cuentas.</p>
+
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:16px; margin-top:18px;">
+          <article class="card card--suave" style="margin:0;">
+            <div class="centro" style="font-size:1.6rem;">1️⃣</div>
+            <h3 class="centro">Instalar la app</h3>
+            <div class="qr-caja"><div id="qr-instalar"></div></div>
+            <p class="pequeno centro">Escanea con la cámara del móvil e instala la tarjeta en la pantalla de inicio. Solo necesita internet la primera vez.</p>
+            <p class="qr-texto centro" id="texto-instalar"></p>
+            <button class="btn btn--fantasma btn--ancho btn--chico no-imprimir" id="copiar-instalar">Copiar enlace</button>
+          </article>
+
+          <article class="card card--suave" style="margin:0;">
+            <div class="centro" style="font-size:1.6rem;">2️⃣</div>
+            <h3 class="centro">Tu sello de hoy</h3>
+            <div class="qr-caja"><div id="qr-sello"></div></div>
+            <p class="pequeno centro">Escanea en cada visita. El móvil pone el sello y avanza la tarjeta. La dueña no recibe ningún dato.</p>
+            <p class="qr-texto centro" id="texto-sello"></p>
+            <button class="btn btn--fantasma btn--ancho btn--chico no-imprimir" id="copiar-sello">Copiar datos del sello</button>
+          </article>
+
+          <article class="card card--suave" style="margin:0;">
+            <div class="centro" style="font-size:1.6rem;">3️⃣</div>
+            <h3 class="centro">Reclamar el premio</h3>
+            <div class="qr-caja"><div id="qr-premio"></div></div>
+            <p class="pequeno centro">Cuando la tarjeta esté completa, escanea aquí. El móvil anota el premio y empieza otra tarjeta.</p>
+            <p class="qr-texto centro" id="texto-premio"></p>
+            <button class="btn btn--fantasma btn--ancho btn--chico no-imprimir" id="copiar-premio">Copiar datos del premio</button>
+          </article>
+        </div>
+
+        <div class="banner" style="margin-top:18px;">🎁 Barra gratis cada 3 sellos &nbsp;·&nbsp; Un sello al día &nbsp;·&nbsp; 🥐 Panadería Demo &nbsp;·&nbsp; tienda ficticia</div>
+      </section>
+
+      <section class="card no-imprimir">
+        <h2>Cómo se usa</h2>
+        <p class="pequeno"><strong>Cliente:</strong> abre «Mi tarjeta», escribe nombre, apellidos y cumpleaños, y pulsa «Escanear QR del local». Apunta al QR 2 para sellar. Al llegar a 3 de 3, apunta al QR 3 y muestra el mensaje «🎉 ¡PREMIO RECLAMADO!» en el local.</p>
+        <p class="pequeno" style="margin-bottom:0;"><strong>Dueña:</strong> configuración inicial opcional en <code>duena.html</code>. Con esta página fija no hace falta: los QRs ya llevan los datos de la tienda ficticia.</p>
+      </section>
+
+      <div class="banner banner--error">⚠️ Los QRs 2 y 3 son de confianza: los valida el móvil del cliente. No hay servidor, ni prueba de compra, ni envío a la dueña.</div>
+    </main>
+  </div>
+
+  <script src="js/vendor/qrcode.min.js"></script>
+  <script src="js/util.js"></script>
+  <script src="js/qr-gen.js"></script>
+  <script>
+    (function () {
+      'use strict';
+      const $ = (id) => document.getElementById(id);
+      const CONFIG = {
+        negocio_id: '6e36f93dcfb73a33',
+        nombre_negocio: 'Panadería Demo',
+        premio: 'Barra gratis',
+        sellos_para_premio: 3,
+        frecuencia: 'diario'
+      };
+
+      function dibujar() {
+        const instalar = QRGen.urlInstalar();
+        const sello = QRGen.codigoSelloDiario(CONFIG);
+        const premio = QRGen.codigoReclamarPremio(CONFIG);
+
+        QRGen.dibujar($('qr-instalar'), instalar, 200);
+        QRGen.dibujar($('qr-sello'), sello, 200);
+        QRGen.dibujar($('qr-premio'), premio, 200);
+
+        $('texto-instalar').textContent = instalar;
+        $('texto-sello').textContent = sello;
+        $('texto-premio').textContent = premio;
+
+        $('copiar-instalar').addEventListener('click', function () {
+          Util.copiar(instalar).then(function () { Util.toast('Enlace de instalar copiado.'); });
+        });
+        $('copiar-sello').addEventListener('click', function () {
+          Util.copiar(sello).then(function () { Util.toast('Datos del sello copiados.'); });
+        });
+        $('copiar-premio').addEventListener('click', function () {
+          Util.copiar(premio).then(function () { Util.toast('Datos del premio copiados.'); });
+        });
+        $('btn-imprimir').addEventListener('click', function () { window.print(); });
+      }
+
+      try { dibujar(); }
+      catch (error) { Util.toast(error.message, 'error'); }
+
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function () {
+          navigator.serviceWorker.register('sw.js').catch(function () {});
+        });
+      }
+    })();
+  </script>
+</body>
+</html>

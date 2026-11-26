@@ -1,0 +1,606 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f59e0b">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Mi Tarjeta">
+  <title>Mi Tarjeta Fidelidad</title>
+  <link rel="manifest" href="manifest-cliente.json">
+  <link rel="stylesheet" href="css/estilos.css">
+</head>
+<body class="tema-cliente">
+  <div class="app">
+    <header class="topbar">
+      <div class="brand"><span class="brand__icon">🥐</span> Mi Tarjeta</div>
+      <button class="topbar__accion" id="btn-ayuda">(?)</button>
+    </header>
+
+    <main>
+      <!-- Alta -->
+      <section id="pantalla-bienvenida">
+        <div class="card" style="text-align:center; padding:26px 20px;">
+          <div style="font-size:2.6rem;">📲</div>
+          <h1>¡Bienvenido!</h1>
+          <p class="muted">Tu tarjeta vive solo en este móvil. Antes de nada, dinos tu nombre, tus apellidos y tu cumpleaños para poder felicitarte.</p>
+          <div class="campo" style="text-align:left; margin-top:20px;">
+            <label class="label" for="input-nombre">Tu nombre</label>
+            <input class="input" id="input-nombre" type="text" maxlength="60" autocomplete="given-name" placeholder="Ej. Jose" enterkeyhint="next">
+          </div>
+          <div class="campo" style="text-align:left;">
+            <label class="label" for="input-apellidos">Tus apellidos</label>
+            <input class="input" id="input-apellidos" type="text" maxlength="80" autocomplete="family-name" placeholder="Ej. García López" enterkeyhint="next">
+          </div>
+          <div class="campo" style="text-align:left;">
+            <label class="label" for="input-cumpleanos">¿Cuándo es tu cumpleaños?</label>
+            <input class="input" id="input-cumpleanos" type="date" min="1900-01-01" autocomplete="bday">
+            <div class="ayuda">Se guarda solo en este móvil. Sirve para el aviso «Feliz cumpleaños»; no se envía a nadie.</div>
+          </div>
+          <button class="btn btn--primario btn--ancho" id="btn-crear">Crear mi tarjeta</button>
+          <button class="btn btn--fantasma btn--ancho" id="btn-instalar-inicio" style="margin-top:10px;">📲 Instalar app en este móvil</button>
+        </div>
+        <div class="card card--suave">
+          <h3>¿Ya tenías tarjeta y cambiaste de móvil?</h3>
+          <p class="pequeno muted" style="margin-bottom:12px;">Pídele a la dueña tu token y pégalo aquí. Necesitas 32 caracteres hexadecimales.</p>
+          <button class="btn btn--secundario btn--ancho" id="btn-pegartoken-inicio">Pegar mi token</button>
+        </div>
+      </section>
+
+      <!-- Tarjeta -->
+      <section id="pantalla-tarjeta" class="oculto">
+        <div class="card card--tarjeta">
+          <div class="tarjeta__top">
+            <div class="tarjeta__negocio" id="negocio">Tu local</div>
+            <span class="chip" id="racha">🔥 0 días</span>
+          </div>
+          <div class="tarjeta__premio" id="premio">🎁 Premio: lo recibirás en tu primer sello</div>
+          <div class="progreso" id="progreso"></div>
+          <div class="tarjeta__pie">
+            <span id="sellos-texto">0 sellos en total</span>
+            <span id="ultimo-sello">Todavía sin sellos</span>
+          </div>
+        </div>
+
+        <div id="aviso-tarjeta"></div>
+
+        <div class="acciones">
+          <button class="btn btn--primario btn--ancho" id="btn-mostrar-qr">📲 Mostrar mi QR</button>
+          <button class="btn btn--oscuro btn--ancho" id="btn-escanear">✅ Escanear sello del local</button>
+        </div>
+        <p class="pequeno muted centro" style="margin:10px 0 0;">Tus sellos se guardan solo en este móvil. La dueña no recibe ningún dato.</p>
+
+        <div class="card" style="margin-top:16px;">
+          <h3>🔥 Tu racha</h3>
+          <p class="pequeno muted" id="texto-racha" style="margin-bottom:12px;">Ven cada día para mantenerla viva.</p>
+          <button class="btn btn--fantasma btn--ancho btn--chico" id="btn-recordatorio">🔔 Activar mis 3 avisos</button>
+        </div>
+      </section>
+
+      <!-- Historial -->
+      <section id="pantalla-historial" class="oculto">
+        <div class="card">
+          <h2>Mis sellos</h2>
+          <p class="pequeno muted">Historial guardado en este móvil.</p>
+          <ul class="lista" id="historial-lista"></ul>
+        </div>
+      </section>
+
+      <!-- Ajustes -->
+      <section id="pantalla-ajustes" class="oculto">
+        <div class="card">
+          <h2>Mis datos</h2>
+          <p class="pequeno muted">Todo se guarda en este móvil. Haz una copia de vez en cuando.</p>
+          <div class="acciones">
+            <button class="btn btn--secundario btn--ancho" id="btn-exportar">💾 Exportar mi tarjeta (.json)</button>
+            <button class="btn btn--fantasma btn--ancho" id="btn-importar">📥 Importar una copia</button>
+            <button class="btn btn--fantasma btn--ancho" id="btn-pegartoken">🔑 Cambiar mi token</button>
+            <button class="btn btn--fantasma btn--ancho" id="btn-probar-notif">🔔 Probar mis 3 avisos</button>
+            <button class="btn btn--peligro btn--ancho" id="btn-borrar">🗑️ Borrar mis datos</button>
+          </div>
+          <input type="file" id="archivo-cliente" accept="application/json,.json" class="oculto">
+        </div>
+        <div class="card card--suave">
+          <h3>Instalar en pantalla de inicio</h3>
+          <button class="btn btn--primario btn--ancho" id="btn-instalar" style="margin-bottom:10px;">📲 Instalar app en este móvil</button>
+          <p class="pequeno muted" id="texto-instalar" style="margin-bottom:0;">En iPhone: Compartir → «Añadir a pantalla de inicio». En Android: menú del navegador → «Instalar app».</p>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <nav class="nav oculto" id="nav-principal">
+    <button class="nav__boton nav__boton--activo" data-pantalla="tarjeta"><span class="nav__icono">💳</span>Tarjeta</button>
+    <button class="nav__boton" data-pantalla="historial"><span class="nav__icono">📜</span>Historial</button>
+    <button class="nav__boton" data-pantalla="ajustes"><span class="nav__icono">⚙️</span>Ajustes</button>
+  </nav>
+
+  <!-- Modal: QR de identidad -->
+  <div class="modal oculto" id="modal-qr">
+    <div class="modal__panel">
+      <div class="modal__cabecera"><h2>Muestra este QR</h2><button class="btn btn--fantasma btn--icono" data-cerrar="modal-qr">✕</button></div>
+      <p class="pequeno muted centro">Modo verificado opcional: la dueña lo escanea en el mostrador. Solo contiene tu nombre y tu token: nunca tus sellos.</p>
+      <div class="qr-caja"><div id="qr-cliente"></div></div>
+      <p class="qr-texto centro" id="qr-token"></p>
+    </div>
+  </div>
+
+  <!-- Modal: escanear respuesta -->
+  <div class="modal oculto" id="modal-escanear">
+    <div class="modal__panel">
+      <div class="modal__cabecera"><h2>Escanear QR del local</h2><button class="btn btn--fantasma btn--icono" data-cerrar="modal-escanear">✕</button></div>
+      <p class="pequeno muted" id="estado-escaner">Apunta al QR del sello (o al de reclamar premio)…</p>
+      <div class="scanner" id="lector-cliente"></div>
+      <details class="detalle">
+        <summary>¿Sin cámara? Pega el código aquí</summary>
+        <div class="campo" style="margin-top:12px;">
+          <textarea class="input" id="pegar-respuesta" placeholder="Pega aquí el JSON del sello o del premio"></textarea>
+          <button class="btn btn--secundario btn--ancho btn--chico" id="btn-aplicar-pegado">Aplicar código</button>
+        </div>
+      </details>
+    </div>
+  </div>
+
+  <script src="js/vendor/idb.umd.js"></script>
+  <script src="js/vendor/qrcode.min.js"></script>
+  <script src="js/vendor/html5-qrcode.min.js"></script>
+  <script src="js/util.js"></script>
+  <script src="js/db-cliente.js"></script>
+  <script src="js/qr-gen.js"></script>
+  <script src="js/qr-scan.js"></script>
+  <script src="js/backup.js"></script>
+  <script src="js/notif.js"></script>
+  <script>
+    (function () {
+      'use strict';
+      const $ = (id) => document.getElementById(id);
+      let perfil = null;
+      let procesando = false;
+      let installPrompt = null;
+
+      window.addEventListener('beforeinstallprompt', function (event) {
+        event.preventDefault();
+        installPrompt = event;
+      });
+
+      async function instalarApp() {
+        if (installPrompt) {
+          await installPrompt.prompt();
+          const eleccion = await installPrompt.userChoice;
+          installPrompt = null;
+          if (eleccion && eleccion.outcome === 'accepted') Util.toast('✅ App instalada en tu móvil.');
+          return;
+        }
+        const iphone = /iphone|ipad|ipod/i.test(navigator.userAgent);
+        Util.toast(iphone
+          ? 'En iPhone: Compartir → «Añadir a pantalla de inicio».'
+          : 'En Android: menú ⋮ → «Instalar app».');
+      }
+
+      function mostrar(pantalla) {
+        ['bienvenida', 'tarjeta', 'historial', 'ajustes'].forEach(function (nombre) {
+          $('pantalla-' + nombre).classList.toggle('oculto', nombre !== pantalla);
+        });
+        $('nav-principal').classList.toggle('oculto', pantalla === 'bienvenida');
+        document.querySelectorAll('.nav__boton').forEach(function (boton) {
+          boton.classList.toggle('nav__boton--activo', boton.dataset.pantalla === pantalla);
+        });
+        window.scrollTo(0, 0);
+      }
+
+      function abrir(id) { $(id).classList.remove('oculto'); }
+      function cerrar(id) {
+        $(id).classList.add('oculto');
+        if (id === 'modal-escanear') QRScan.detener().catch(function () {});
+      }
+
+      function fechaBonita(iso) {
+        const partes = String(iso).split('-').map(Number);
+        if (partes.length !== 3) return iso;
+        return new Date(partes[0], partes[1] - 1, partes[2]).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+      }
+
+      // Sellos del ciclo actual que se pintan en la tarjeta (0..cada).
+      function progreso(ciclo, cada) {
+        if (!(Number(cada) > 0)) return 0;
+        const dentro = Number(ciclo) % Number(cada);
+        return dentro === 0 && Number(ciclo) > 0 ? Number(cada) : dentro;
+      }
+
+      async function render() {
+        $('negocio').textContent = perfil.negocio_nombre || 'Tu local';
+        $('premio').textContent = perfil.premio ? '🎁 Premio: ' + perfil.premio : '🎁 Premio: lo recibirás en tu primer sello';
+
+        const total = Number(perfil.sellos_totales) || 0;
+        const ciclo = Number(perfil.sellos_ciclo) || 0;
+        const cada = Number(perfil.sellos_para_premio) || 10;
+        const dentro = progreso(ciclo, cada);
+        const caja = $('progreso');
+        caja.innerHTML = '';
+        for (let i = 0; i < Math.min(cada, 30); i++) {
+          const punto = document.createElement('div');
+          punto.className = 'sello' + (i < dentro ? ' sello--lleno' : '');
+          punto.textContent = '★';
+          caja.appendChild(punto);
+        }
+
+        const frecuencia = perfil.frecuencia === 'semanal' ? 'semanal' : 'diario';
+        const periodoActual = Util.claveActual(frecuencia);
+        const periodoAnterior = Util.claveAnterior(periodoActual, frecuencia);
+        const unidad = frecuencia === 'diario' ? 'día' : 'semana';
+        const racha = Number(perfil.racha_actual) || 0;
+        const mejor = Number(perfil.racha_maxima) || racha;
+        const unidadRacha = mejor === 1 ? unidad : unidad + 's';
+        $('racha').textContent = '🔥 ' + racha + ' ' + (racha === 1 ? unidad : unidad + 's');
+        $('texto-racha').textContent = racha > 0
+          ? 'Tu mejor racha: ' + mejor + ' ' + unidadRacha + '. Vuelve ' +
+            (frecuencia === 'diario' ? 'mañana' : 'la semana que viene') + ' para seguir sumando.'
+          : 'Ven cada ' + unidad + ' para mantenerla viva.';
+        $('sellos-texto').textContent = dentro + ' / ' + cada + ' sellos' + (total ? ' · ' + total + ' en total' : '');
+        $('ultimo-sello').textContent = perfil.ultimo_sello ? 'Último: ' + fechaBonita(perfil.ultimo_sello) : 'Todavía sin sellos';
+        $('aviso-tarjeta').innerHTML = perfil.ultimo_premio && dentro === 0
+          ? '<div class="banner">🎉 Premio reclamado el ' + Util.escapar(fechaBonita(perfil.ultimo_premio)) + '. ¡A por la siguiente tarjeta!</div>'
+          : '';
+
+        const ultimoPeriodo = perfil.ultimo_periodo || perfil.ultimo_sello;
+        if (ultimoPeriodo && ultimoPeriodo < periodoAnterior && racha > 0) {
+          perfil.racha_actual = 0;
+          perfil = await DBCliente.guardarPerfil(perfil);
+          $('aviso-tarjeta').innerHTML = '<div class="banner banner--error">💔 Racha perdida, empieza de nuevo. ¡' +
+            (frecuencia === 'diario' ? 'Hoy' : 'Esta semana') + ' puedes volver a sumar!</div>';
+        }
+      }
+
+      async function renderHistorial() {
+        const entradas = await DBCliente.listarHistorial();
+        const lista = $('historial-lista');
+        lista.innerHTML = '';
+        if (!entradas.length) {
+          lista.innerHTML = '<li class="fila"><span class="fila__secundario">Todavía no tienes sellos. ¡A por el primero!</span></li>';
+          return;
+        }
+        entradas.forEach(function (entrada) {
+          const li = document.createElement('li');
+          li.className = 'fila';
+          const fecha = new Date(entrada.ts);
+          li.innerHTML = '<div><div class="fila__principal">' + (entrada.tipo === 'premio' ? '🎁 Premio reclamado' : '✅ Sello') + '</div>' +
+            '<div class="fila__secundario">' + Util.escapar(fecha.toLocaleString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })) + '</div></div>' +
+            '<div class="fila__derecha"><div class="fila__principal">' + (entrada.tipo === 'premio' ? '🎉' : '🔥 ' + Number(entrada.racha_actual || 0)) + '</div>' +
+            '<div class="fila__secundario">' + (entrada.premio ? Util.escapar(String(entrada.premio).slice(0, 22)) : (entrada.total ? 'Total ' + Number(entrada.total) : 'racha')) + '</div></div>';
+          lista.appendChild(li);
+        });
+      }
+
+      async function aplicarRespuesta(datos) {
+        if (!datos || datos.t !== 'sello' || Number(datos.v) !== 1) {
+          throw new Error('Ese QR no es un sello válido.');
+        }
+        if (String(datos.token).toLowerCase() !== String(perfil.token).toLowerCase()) {
+          Util.toast('Ese sello es de otra tarjeta. No lo he aplicado.', 'error');
+          return false;
+        }
+
+        perfil.nombre = String(datos.nombre || perfil.nombre).trim().slice(0, 60);
+        perfil.negocio_nombre = String(datos.negocio || '').trim();
+        perfil.premio = String(datos.premio || '').trim();
+        perfil.sellos_para_premio = Math.max(1, Number(datos.sellos_para_premio) || 10);
+        perfil.racha_actual = Math.max(0, Number(datos.racha_actual) || 0);
+        perfil.racha_maxima = Math.max(perfil.racha_actual, Number(datos.racha_maxima) || 0);
+        perfil.sellos_totales = Math.max(0, Number(datos.sellos_totales) || 0);
+        perfil.sellos_ciclo = datos.sellos_ciclo !== undefined
+          ? Math.max(0, Number(datos.sellos_ciclo) || 0)
+          : Math.min(perfil.sellos_totales, perfil.sellos_para_premio);
+        if (datos.premios_reclamados !== undefined) {
+          perfil.premios_reclamados = Math.max(0, Number(datos.premios_reclamados) || 0);
+        }
+        if (datos.ultimo_premio !== undefined) perfil.ultimo_premio = datos.ultimo_premio || null;
+        perfil.ultimo_sello = String(datos.ultimo_sello || Util.fechaLocal());
+        perfil.frecuencia = perfil.frecuencia === 'semanal' ? 'semanal' : 'diario';
+        perfil.ultimo_periodo = Util.claveActual(perfil.frecuencia);
+
+        perfil = await DBCliente.guardarPerfil(perfil);
+        await DBCliente.addHistorial('sello', perfil.racha_actual, { total: perfil.sellos_totales, negocio: perfil.negocio_nombre });
+        Util.limpiarHash();
+        $('aviso-tarjeta').innerHTML = '';
+        await render();
+        await renderHistorial();
+        // El permiso de notificaciones no debe bloquear la tarjeta.
+        Notif.programarTodo(perfil, perfil.racha_actual).catch(function () {});
+
+        const ganaPremio = perfil.sellos_ciclo > 0 && perfil.sellos_para_premio > 0 &&
+          perfil.sellos_ciclo % perfil.sellos_para_premio === 0;
+        if (ganaPremio) {
+          $('aviso-tarjeta').innerHTML = '<div class="banner banner--premio">🎁 ¡TARJETA COMPLETA!<br><span style="font-size:1rem">' +
+            Util.escapar(perfil.premio || 'Pide tu premio en el local') + '</span><br><span class="pequeno">Escanea el QR 3 del mostrador, «Reclamar premio».</span></div>';
+        } else {
+          Util.toast('✅ Sello confirmado — Racha ' + perfil.racha_actual);
+        }
+        return true;
+      }
+
+      // QR fijo del mostrador: se sella uno mismo. Es de CONFIANZA:
+      // este móvil no puede comprobar la compra, solo respeta el periodo.
+      async function aplicarSelloDiario(datos) {
+        const frecuencia = datos.frecuencia;
+        const clave = Util.claveActual(frecuencia);
+        if (perfil.ultimo_periodo === clave) {
+          Util.toast(frecuencia === 'diario'
+            ? 'Ya sellaste hoy. Vuelve mañana.'
+            : 'Ya sellaste esta semana. Vuelve la semana que viene.', 'error');
+          return false;
+        }
+
+        const anterior = Util.claveAnterior(clave, frecuencia);
+        const racha = perfil.ultimo_periodo === anterior ? (Number(perfil.racha_actual) || 0) + 1 : 1;
+
+        perfil.negocio_id = datos.id;
+        perfil.negocio_nombre = datos.negocio;
+        perfil.premio = datos.premio;
+        perfil.sellos_para_premio = datos.cada;
+        perfil.frecuencia = frecuencia;
+        perfil.racha_actual = racha;
+        perfil.racha_maxima = Math.max(racha, Number(perfil.racha_maxima) || 0);
+        perfil.sellos_totales = (Number(perfil.sellos_totales) || 0) + 1;
+        perfil.sellos_ciclo = (Number(perfil.sellos_ciclo) || 0) + 1;
+        perfil.ultimo_sello = Util.fechaLocal();
+        perfil.ultimo_periodo = clave;
+
+        perfil = await DBCliente.guardarPerfil(perfil);
+        await DBCliente.addHistorial('sello', racha, {
+          total: perfil.sellos_totales,
+          negocio: perfil.negocio_nombre,
+          periodo: clave
+        });
+        Util.limpiarHash();
+        $('aviso-tarjeta').innerHTML = '';
+        await render();
+        await renderHistorial();
+        // El permiso de notificaciones no debe bloquear la tarjeta.
+        Notif.programarTodo(perfil, racha).catch(function () {});
+
+        const ganaPremio = perfil.sellos_ciclo > 0 && perfil.sellos_ciclo % perfil.sellos_para_premio === 0;
+        if (ganaPremio) {
+          $('aviso-tarjeta').innerHTML = '<div class="banner banner--premio">🎁 ¡TARJETA COMPLETA!<br><span style="font-size:1rem">' +
+            Util.escapar(perfil.premio || 'Pide tu premio en el local') + '</span><br><span class="pequeno">Escanea el QR 3 del mostrador, «Reclamar premio».</span></div>';
+        } else {
+          Util.toast('✅ Sello de ' + datos.negocio + ' — Racha ' + racha);
+        }
+        return true;
+      }
+
+      // QR 3 del mostrador: reclamar el premio cuando la tarjeta está completa.
+      // Es de CONFIANZA: lo valida este móvil, nadie recibe la reclamación.
+      async function aplicarReclamo(datos) {
+        if (perfil.negocio_id && String(perfil.negocio_id) !== String(datos.id)) {
+          throw new Error('Ese QR es de otro local. No lo he aplicado.');
+        }
+        if (!perfil.sellos_para_premio) {
+          throw new Error('Escanea primero el QR del sello para configurar tu tarjeta.');
+        }
+        const cada = Math.max(1, Number(perfil.sellos_para_premio) || 0);
+        const ciclo = Number(perfil.sellos_ciclo) || 0;
+        if (ciclo < cada) {
+          const falta = cada - ciclo;
+          Util.toast('Te falta' + (falta === 1 ? '' : 'n') + ' ' + falta + ' sello' +
+            (falta === 1 ? '' : 's') + ' para reclamar el premio.', 'error');
+          return false;
+        }
+
+        const premio = String(datos.premio || perfil.premio || 'tu premio').trim();
+        if (!perfil.negocio_id) {
+          perfil.negocio_id = datos.id;
+          perfil.negocio_nombre = datos.negocio || perfil.negocio_nombre;
+          perfil.premio = premio;
+        }
+        perfil.premios_reclamados = (Number(perfil.premios_reclamados) || 0) + 1;
+        perfil.ultimo_premio = Util.fechaLocal();
+        perfil.sellos_ciclo = 0;
+        perfil = await DBCliente.guardarPerfil(perfil);
+        await DBCliente.addHistorial('premio', perfil.racha_actual, {
+          total: perfil.sellos_totales,
+          negocio: perfil.negocio_nombre,
+          premio: premio
+        });
+        await render();
+        await renderHistorial();
+        $('aviso-tarjeta').innerHTML = '<div class="banner banner--premio">🎉 ¡PREMIO RECLAMADO!<br><span style="font-size:1rem">' +
+          Util.escapar(premio) + '</span><br><span class="pequeno">Muestra este mensaje en el local. Ya puedes empezar otra tarjeta.</span></div>';
+        Util.toast('🎉 Premio reclamado. Tarjeta nueva empezada.');
+        return true;
+      }
+
+      // Acepta los 3 QRs fijos del local y también el QR verificado de la dueña.
+      async function procesarCodigo(texto) {
+        if (!perfil || !perfil.nombre || !perfil.apellidos || !perfil.cumpleanos) {
+          throw new Error('Completa primero tu nombre, apellidos y cumpleaños.');
+        }
+        const datos = Util.datosDelTexto(texto);
+        if (!datos) throw new Error('No se pudo leer el QR.');
+        if (datos.t === 'sello-diario') return aplicarSelloDiario(QRScan.parsearSelloDiario(texto));
+        if (datos.t === 'sello') return aplicarRespuesta(QRScan.parsearRespuesta(texto));
+        if (datos.t === 'reclamar-premio') return aplicarReclamo(QRScan.parsearReclamarPremio(texto));
+        throw new Error('Ese QR no es del local.');
+      }
+
+      async function abrirEscaner() {
+        abrir('modal-escanear');
+        $('estado-escaner').textContent = 'Apunta al QR del sello (o al de reclamar premio)…';
+        procesando = false;
+        try {
+          await QRScan.iniciar({
+            elementId: 'lector-cliente',
+            onResultado: async function (texto) {
+              if (procesando) return;
+              procesando = true;
+              await QRScan.detener();
+              cerrar('modal-escanear');
+              try {
+                await procesarCodigo(texto);
+              } catch (error) {
+                Util.toast(error.message, 'error');
+              } finally {
+                procesando = false;
+              }
+            }
+          });
+        } catch (error) {
+          $('estado-escaner').textContent = error.message;
+        }
+      }
+
+      function pegarToken() {
+        const valor = window.prompt('Pega el token que te ha dado la dueña (32 caracteres):', '');
+        if (!valor) return;
+        const token = valor.trim().toLowerCase();
+        if (!Util.esToken(token)) {
+          Util.toast('Ese token no es válido.', 'error');
+          return;
+        }
+        DBCliente.guardarPerfil(Object.assign({}, perfil, { token: token })).then(function (nuevo) {
+          perfil = nuevo;
+          Util.toast('Token actualizado. Ya puedes mostrar tu QR.');
+        }).catch(function (error) { Util.toast(error.message, 'error'); });
+      }
+
+      async function inicializar() {
+        document.querySelectorAll('[data-cerrar]').forEach(function (boton) {
+          boton.addEventListener('click', function () { cerrar(boton.dataset.cerrar); });
+        });
+        document.querySelectorAll('.modal').forEach(function (modal) {
+          modal.addEventListener('click', function (event) {
+            if (event.target === modal) cerrar(modal.id);
+          });
+        });
+        document.querySelectorAll('.nav__boton').forEach(function (boton) {
+          boton.addEventListener('click', function () {
+            mostrar(boton.dataset.pantalla);
+            if (boton.dataset.pantalla === 'historial') renderHistorial().catch(function (e) { Util.toast(e.message, 'error'); });
+          });
+        });
+
+        $('btn-ayuda').addEventListener('click', function () {
+          Util.toast('Escanea el QR del sello del mostrador → listo. Sin internet.');
+        });
+
+        $('btn-instalar-inicio').addEventListener('click', instalarApp);
+        $('btn-instalar').addEventListener('click', instalarApp);
+
+        $('btn-crear').addEventListener('click', async function () {
+          const nombre = $('input-nombre').value.trim();
+          const apellidos = $('input-apellidos').value.trim();
+          const cumpleanos = $('input-cumpleanos').value;
+          if (nombre.length < 2) return Util.toast('Escribe tu nombre para continuar.', 'error');
+          if (apellidos.length < 2) return Util.toast('Escribe tus apellidos para continuar.', 'error');
+          if (!/^\d{4}-\d{2}-\d{2}$/.test(cumpleanos)) return Util.toast('Pon tu fecha de nacimiento.', 'error');
+          const nacimiento = new Date(cumpleanos + 'T00:00:00');
+          if (isNaN(nacimiento.getTime()) || nacimiento > new Date()) return Util.toast('Revisa la fecha de nacimiento.', 'error');
+          try {
+            perfil = await DBCliente.guardarPerfil(Object.assign({}, perfil, {
+              nombre: nombre.slice(0, 60),
+              apellidos: apellidos.slice(0, 80),
+              cumpleanos: cumpleanos
+            }));
+            await render();
+            mostrar('tarjeta');
+            Notif.programarTodo(perfil, perfil.racha_actual || 0).then(function (resultado) {
+              if (resultado === 'granted' || resultado === 'programada') Util.toast('✅ Tarjeta creada. Tus 3 avisos están activos.');
+              else Util.toast('Tarjeta creada. Activa los avisos en Ajustes.', 'error');
+            }).catch(function () { Util.toast('Tarjeta creada. No se pudieron activar los avisos.', 'error'); });
+          } catch (error) { Util.toast(error.message, 'error'); }
+        });
+
+        $('btn-pegartoken-inicio').addEventListener('click', pegarToken);
+        $('btn-pegartoken').addEventListener('click', pegarToken);
+
+        $('btn-mostrar-qr').addEventListener('click', function () {
+          try {
+            QRGen.dibujar($('qr-cliente'), QRGen.codigoIdentidad(perfil), 240);
+            $('qr-token').textContent = 'Token: ' + perfil.token;
+            abrir('modal-qr');
+          } catch (error) { Util.toast(error.message, 'error'); }
+        });
+
+        $('btn-escanear').addEventListener('click', abrirEscaner);
+
+        $('btn-aplicar-pegado').addEventListener('click', async function () {
+          try {
+            await procesarCodigo($('pegar-respuesta').value);
+            $('pegar-respuesta').value = '';
+            cerrar('modal-escanear');
+          } catch (error) { Util.toast(error.message, 'error'); }
+        });
+
+        $('btn-recordatorio').addEventListener('click', async function () {
+          const resultado = await Notif.programarTodo(perfil, perfil.racha_actual || 0);
+          if (resultado === 'granted' || resultado === 'programada') Util.toast('🔔 Avisos listos: sello diario, cumpleaños y Navidad.');
+          else if (resultado === 'denegado') Util.toast('Activa las notificaciones en los ajustes del móvil.', 'error');
+          else Util.toast('Este navegador no permite avisos locales.', 'error');
+        });
+
+        $('btn-probar-notif').addEventListener('click', async function () {
+          const resultado = await Notif.probar(perfil);
+          if (resultado !== 'enviada') Util.toast('Activa primero las notificaciones del navegador.', 'error');
+        });
+
+        $('btn-exportar').addEventListener('click', async function () {
+          try { await Backup.exportarCliente(); Util.toast('Copia descargada. Guárdala en Drive o por email.'); }
+          catch (error) { Util.toast(error.message, 'error'); }
+        });
+
+        $('btn-importar').addEventListener('click', function () { $('archivo-cliente').click(); });
+        $('archivo-cliente').addEventListener('change', async function (event) {
+          try {
+            if (!window.confirm('¿Reemplazar los datos de este móvil con la copia?')) return;
+            perfil = await Backup.importarCliente(event.target.files[0]);
+            await render();
+            await renderHistorial();
+            mostrar(perfil.nombre && perfil.apellidos && perfil.cumpleanos ? 'tarjeta' : 'bienvenida');
+            Util.toast('Copia restaurada.');
+          } catch (error) { Util.toast(error.message, 'error'); }
+          event.target.value = '';
+        });
+
+        $('btn-borrar').addEventListener('click', async function () {
+          if (!window.confirm('¿Borrar tu tarjeta de este móvil? No se puede deshacer.')) return;
+          if (!window.confirm('¿Seguro? La dueña podría reasignarte un token nuevo.')) return;
+          await DBCliente.borrarTodo();
+          window.location.reload();
+        });
+
+        try {
+          perfil = await DBCliente.getPerfil();
+          $('input-cumpleanos').max = Util.fechaLocal();
+          $('input-nombre').value = perfil.nombre || '';
+          $('input-apellidos').value = perfil.apellidos || '';
+          $('input-cumpleanos').value = perfil.cumpleanos || '';
+          const completo = !!(perfil.nombre && perfil.apellidos && perfil.cumpleanos);
+          await Notif.sincronizar(completo ? perfil : null, perfil.racha_actual || 0);
+          if (!completo) {
+            mostrar('bienvenida');
+          } else {
+            await render();
+            mostrar('tarjeta');
+          }
+          const datosHash = Util.datosDelHash();
+          if (datosHash) await procesarCodigo(JSON.stringify(datosHash));
+        } catch (error) {
+          Util.toast(error.message, 'error');
+        }
+      }
+
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js').catch(function () {});
+      }
+      window.addEventListener('hashchange', function () {
+        const datos = Util.datosDelHash();
+        if (datos && perfil && perfil.nombre && perfil.apellidos && perfil.cumpleanos) {
+          procesarCodigo(JSON.stringify(datos)).catch(function (e) { Util.toast(e.message, 'error'); });
+        }
+      });
+      document.addEventListener('DOMContentLoaded', inicializar);
+    })();
+  </script>
+</body>
+</html>
